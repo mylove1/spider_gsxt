@@ -5,10 +5,7 @@ import threading
 import time
 import string
 import traceback
-import bsddb
 from selenium import webdriver
-
-
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
@@ -168,6 +165,7 @@ class GSXT:
             lastDataThread.join()
     def has_page_load(self, driver):
         return driver.execute_script("return document.readyState") == 'complete'
+
     def start(self, newUrl, newUrlPaging):
         try:
             self.browser.get(newUrl)
