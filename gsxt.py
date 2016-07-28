@@ -1,14 +1,13 @@
 # -*- coding:utf-8 -*-
 import sys
 import re
-import thread
+import threading
 import time
 import string
 import traceback
+import bsddb
 from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
+
 
 
 reload(sys)
@@ -56,13 +55,49 @@ class Tool:
         for temp in tabledata:
             f.write("%s %s\n" % (tabledata[temp], temp))
         f.close()
+"""
+class BerkeleyDB:
+    def __init__(self, dbName, dbPath, dictCarry):
+        #name like tag.db
+        self.dbname = dbName
+        self.dbpath = dbPath
+        self.dictcarry = dictCarry
 
-class GSXTIndex:
+    def bsddbWriter(self):
+        dbenv = bsddb.db.DBEnv()
+        dbenv.open(self.dbpath, bsddb.db.DB_CREATE | bsddb.db.DB_INIT_CDB | bsddb.db.DB_INIT_MPOOL)
+        db = bsddb.db.DB(dbenv)
+        file = self.dbpath + '/' + self.dbname
+        db.open(file, bsddb.db.DB_BTREE, bsddb.db.DB_CREATE, 0660)
+        db['test_key1'] = 'test_data1'
+        db.sync()
+        db.close()
+        dbenv.close()
+
+    def bsddbRead(self):
+        dbenv = bsddb.db.DBEnv()
+        dbenv.open(self.dbpath, bsddb.db.DB_CREATE | bsddb.db.DB_INIT_MPOOL)
+        db = bsddb.db.DB(dbenv)
+        file = self.dbpath + '/' + self.dbname
+        db.open(self.dbname , bsddb.db.DB_BTREE, bsddb.db.DB_RDONLY, 0660)
+        db.get('test_key1')
+        cur = db.cursor()
+        #cur.set_range(prefix + 'metadatatag')
+        firstTag = cur.next()
+        db.close()
+        dbenv.close()
+"""
+class GSXT:
     def __init__(self):
         self.url = 'http://gsxt.saic.gov.cn/'
+        self.pageNum = 0
+        self.pageNumAll = 0
+        self.tool = Tool()
+        self.urlindexcarry = {}
+        self.urlPagingCarry = {}
         self.browser = webdriver.PhantomJS(executable_path='D:\\python\\phantomjs-2.1.1-windows\\bin\\phantomjs.exe')
 
-    def urlCarry(self):
+    def IndexUrlCarry(self):
         try:
             self.browser.get(self.url)
             response = self.browser.page_source.encode('utf-8')
@@ -72,21 +107,10 @@ class GSXTIndex:
             for item in items:
                 hrefstring = self.browser.find_element_by_link_text(item).get_attribute('href')
                 urlcarry[item] = hrefstring
-            return urlcarry
+            self.urlindexcarry = urlcarry
         except Exception, e:
             print traceback.print_exc()
 
-    def Close(self):
-        return self.browser.quit()
-
-class GSXTPaging:
-    def __init__(self, urlsIndexdict):
-        self.pageNum = 0
-        self.pageNumAll = 0
-        self.tool = Tool()
-        self.urlindexcarry = urlsIndexdict
-        self.urlPagingCarry = {}
-        self.browser = webdriver.PhantomJS(executable_path='D:\\python\\phantomjs-2.1.1-windows\\bin\\phantomjs.exe')
     #alone
     def findExceptionDirectory_zhejiang(self, url):
         try:
@@ -131,24 +155,44 @@ class GSXTPaging:
             urlcarry[item[1]] = newUrlPaging + item[0] + '&no=7'
         return urlcarry
 
-    def getTableCycle(self, newUrl, newUrlPaging):
+    def checkDataIsNew(self, DataCarry):
+        #time?
+        #name?
+        newData = DataCarry
+        return newData
+
+    def getLastData(self, dictCarry):
+        for urlName in dictCarry:
+            lastDataThread = ThreadWithTable(urlName, dictCarry[urlName])
+            lastDataThread.start()
+            lastDataThread.join()
+    def has_page_load(self, driver):
+        return driver.execute_script("return document.readyState") == 'complete'
+    def start(self, newUrl, newUrlPaging):
         try:
             self.browser.get(newUrl)
             while True:
+                #WebDriverWait(self.browser, timeout=10).until(self.has_page_load)
+                #self.browser.implicitly_wait(30)
                 time.sleep(10)
-                #element = WebDriverWait(self.browser, 10).until(EC.presence_of_element_located((By.ID, "myDynamicElement")))
                 response = self.browser.page_source.encode('utf-8')
                 if response == None and '{{nextPage}}' in response:
                     print "newurl haven\'t loading!"
                 else:
                     self.getPageNumAll(response)
                     self.getPageNum(response)
+                    tableData = self.getTableData(response)
                     if self.pageNum == 1:
-                        tableData = self.getTableData(response)
                         self.tool.tmpSaveTableData(TmpData, tableData)
+                    #area carry thread?
+                    tmpUrlData = self.getTableDataUrl_zhejiang(response, newUrlPaging)
+                    print tmpUrlData
                     print self.pageNum
-                    self.urlPagingCarry = self.getTableDataUrl_zhejiang(response, newUrlPaging)
-                    print self.urlPagingCarry
+                    #newData = self.checkDataIsNew(tmpUrlData)
+                    #self.urlPagingCarry.update(newData)
+
+                    #start get the lastData
+                    #self.getLastData(newData)
 
                 if self.pageNum == self.pageNumAll:
                     break
@@ -156,26 +200,27 @@ class GSXTPaging:
                     self.browser.find_element_by_link_text('下一页').click()
         except Exception, e:
             print traceback.print_exc()
-    def checkCompanyName(self, CompanyNameCarry):
-        pass
 
     def Close(self):
         return self.browser.quit()
 
+class ThreadWithTable(threading.Thread):
+    def __init__(self, name, url ):
+        self.name =name
+        self.url = url
+
+    def run(self):
+        self.getLastDataTable(self.url)
+
+    def getLastDataTable(self, url):
+        pass
+
 if __name__ == "__main__":
     TmpData = "./Conf/table.txt"
 
-    #get the index urls
-    spider = GSXTIndex()
-    items = spider.urlCarry()
-#    for item in items:
-#        print item, items[item]
-    spider.Close()
-
-    #zhejiang
-    spider = GSXTPaging(items)
+    #zhejiang expamle
+    spider = GSXT()
+    spider.IndexUrlCarry()
     newurl, newurlpaging = spider.findExceptionDirectory_zhejiang('http://gsxt.zjaic.gov.cn/zhejiang.jsp')
-    #print newurl
-    #print newurlpaging
-    spider.getTableCycle(newurl, newurlpaging)
+    spider.start(newurl, newurlpaging)
     spider.Close()
