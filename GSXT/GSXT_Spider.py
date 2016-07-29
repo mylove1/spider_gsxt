@@ -1,28 +1,28 @@
 # -*- coding:utf-8 -*-
 import sys
+from multiprocessing import Pool
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
 
-WORKDIRPATH = "E:\python_proj"
+#WORKDIRPATH = "E:\python_proj"
+WORKDIRPATH = "D:\work"
 
 sys.path.append(WORKDIRPATH)
 from lib.GSXTIndexUrl import GSXTIndex
-from lib.OtherPage import *
+from lib.OtherPage import zhejiang
 
 if __name__ == "__main__":
 
     url = 'http://gsxt.saic.gov.cn/'
-    spider = GSXTIndex()
-    urlCarry = spider.start(url)
-    """
+    urlCarry = GSXTIndex(url).start()
     for item in urlCarry:
-        print urlCarry[item]
         print item
-    """
-    spider.close()
+        print urlCarry[item]
 
-    url = urlCarry["浙江"]
-    print url
+    p = Pool()
+    for item in urlCarry:
+        p.apply_async(item(urlCarry[item].start()), args=(item,))
+    p.close()
+    p.join()
 
-    

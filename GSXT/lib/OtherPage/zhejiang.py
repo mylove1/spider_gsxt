@@ -1,7 +1,6 @@
 # -*- coding:utf-8 -*-
 import sys
 import re
-import threading
 import time
 import string
 import traceback
@@ -10,8 +9,9 @@ from selenium import webdriver
 reload(sys)
 sys.setdefaultencoding('utf-8')
 
-sys.path.append("E:\python_proj")
-from lib.config import *
+WORKDIRPATH = 'D:\work\GSXT'
+sys.path.append(WORKDIRPATH)
+from lib.config import  *
 
 class ZheJiang:
     def __init__(self, url):
@@ -19,8 +19,11 @@ class ZheJiang:
         self.tool = Tool()
         self.pageNum = 0
         self.pageNumAll = 0
+        self.first = 0
+        self.end = 0
         self.newurl = ''
         self.newurlpaging = ''
+        self.classname = 'ZHEJIANGTABLE'
         self.browser = webdriver.PhantomJS(executable_path = PHANTOMJSDIRPATH)
 
     def close(self):
@@ -34,12 +37,23 @@ class ZheJiang:
 
 
     def getPageNumAll(self,page):
-        pattern = re.compile('endPage\".*?\"(.*?)\">')
-        self.pageNumAll = re.search(pattern, page).group(1)
-
+        rule = 'endPage\".*?\"(.*?)\">'
+        tmpNum = self.tool.getRulePageStringOne(page, rule)
+        if tmpNum == None:
+            self.pageNumAll = 1
+        else:
+            self.pageNumAll = tmpNum
     def getPageNum(self, page):
-        pattern = re.compile('nextPage\".*?\"(.*?)\">')
-        self.pageNum = string.atoi(re.search(pattern, page).group(1)) - 1
+        if self.end == 1:
+            return self.pageNumAll
+        rule = 'nextPage\".*?\"(.*?)\">'
+        tmpStr = self.tool.getRulePageStringOne(page, rule)
+        if tmpStr == None:
+            self.pageNum = 1
+        else:
+            self.pageNum = string.atoi(tmpStr) - 1
+        if string.atoi(tmpStr) == self.pageNumAll :
+            end = 1
 
     def getTableDataUrl(self, page, newUrlPaging):
         pattern = re.compile('text-align:left.*?viewDetail\(\'(.*?)\'.*?false\">(.*?)<')
@@ -52,39 +66,45 @@ class ZheJiang:
         return urlcarry
 
     def start(self):
+        self.InputExceptionListPage()
         try:
             self.browser.get(self.newurl)
             while True:
                 # WebDriverWait(self.browser, timeout=10).until(self.has_page_load)
                 # self.browser.implicitly_wait(30)
                 time.sleep(10)
+
                 response = self.browser.page_source.encode('utf-8')
                 if response == None and '{{nextPage}}' in response:
                     print "newurl haven\'t loading!"
                 else:
-                    self.getPageNumAll(response)
+                    if self.first == 0:
+                        self.getPageNumAll(response)
+                        self.first = 1
+                    else:
+                        pass
                     self.getPageNum(response)
                     # area carry thread?
                     tmpUrlData = self.getTableDataUrl(response, self.newurlpaging)
                     print tmpUrlData
                     print self.pageNum
+                    print self.pageNumAll
+
                     # newData = self.checkDataIsNew(tmpUrlData)
                     # self.urlPagingCarry.update(newData)
 
                     # start get the lastData
-                    # self.getLastData(newData)
+                    #getLastData(tmpUrlData)
 
                 if self.pageNum == self.pageNumAll:
                     break
                 else:
                     self.browser.find_element_by_link_text('下一页').click()
+            self.close()
         except Exception, e:
             print traceback.print_exc()
 
 
 if __name__ == "__main__":
     url  = 'http://gsxt.zjaic.gov.cn/zhejiang.jsp'
-    spider = ZheJiang(url)
-    spider.InputExceptionListPage()
-    spider.start()
-    spider.close()
+    spider = ZheJiang(url).start()

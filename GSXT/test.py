@@ -1,30 +1,19 @@
-# -*- coding:utf-8 -*-
-import sys
-import re
-import threading
-import time
-import string
-import traceback
-from selenium import webdriver
+from multiprocessing import Pool
+import os, time, random
 
-reload(sys)
-sys.setdefaultencoding('utf-8')
+def long_time_task(name):
+    print 'Run task %s (%s)...' % (name, os.getpid())
+    start = time.time()
+    time.sleep(random.random() * 3)
+    end = time.time()
+    print 'Task %s runs %0.2f seconds.' % (name, (end - start))
 
-sys.path.append("E:\python_proj")
-from lib.config import *
-
-class ZheJiang:
-    def __init__(self, url):
-        self.url = url
-        self.tool = Tool()
-        self.pageNum = 0
-        self.pageNumAll = 0
-        self.browser = webdriver.PhantomJS(executable_path = PHANTOMJSDIRPATH )
-
-    def close(self):
-        return self.browser.quit()
-
-    def InputExceptionListPage(self):
-        rule = '(经营异常名录)\s*\$.*?action.*?\"(.*?)\"'
-        items = self.tool.getRuleString(self.browser, self.url, rule)
-        pass
+if __name__=='__main__':
+    print 'Parent process %s.' % os.getpid()
+    p = Pool()
+    for i in range(5):
+        p.apply_async(long_time_task, args=(i,))
+    print 'Waiting for all subprocesses done...'
+    p.close()
+    p.join()
+    print 'All subprocesses done.'
