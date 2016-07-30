@@ -12,7 +12,7 @@ from config import *
 reload(sys)
 sys.setdefaultencoding('utf-8')
 
-areaDic = {'青海':'QinHai', '辽宁':'LiaoNing', '贵州':'GuiZhou', '北京':'BeiJin', '国家工商行政管理总局':'ZongJu', '广西':'GuangXi', '广东':'GuangDong', '上海':'ShangHai',
+areaDic = {'青海':'QinHai', '辽宁':'LiaoNing', '贵州':'GuiZhou', '北京':'BeiJin', '国家工商行政管理总局':'GuanLiZongJu', '广西':'GuangXi', '广东':'GuangDong', '上海':'ShangHai',
 '海南':'HaiNan', '甘肃':'GanSu', '山东':'ShanDong' , '江西':'JiangXi', '宁夏':'NingXia', '湖南':'HuNan', '河北':'HeBei', '西藏':'XiZang', '吉林':'JiLin', '黑龙江':'HeiLongJiang' ,
 '福建':'FuJiang', '天津':'TianJin', '内蒙古':'NeiMengGu', '安徽':'AnHui', '陕西':'ShanXi', '山西':'Shan1Xi', '新疆':'XinJiang', '四川':'SiChuan', '重庆':'ChongQing', '湖北':'HuBei',
 '江苏':'JiangSu', '河南':'HeNan', '浙江':'ZheJiang', '云南':'YunNan'}

@@ -6,12 +6,10 @@ import string
 import traceback
 from selenium import webdriver
 
-reload(sys)
-sys.setdefaultencoding('utf-8')
-
 WORKDIRPATH = 'D:\work\GSXT'
 sys.path.append(WORKDIRPATH)
 from lib.config import  *
+from lib.Rules.ZheJiangRules import ZHEJIANG
 
 class ZheJiang:
     def __init__(self, url):
@@ -23,8 +21,10 @@ class ZheJiang:
         self.end = 0
         self.newurl = ''
         self.newurlpaging = ''
-        self.classname = 'ZHEJIANGTABLE'
+        self.lastdata = ZHEJIANG()
+        self.classname = 'ZHEJIANG'
         self.browser = webdriver.PhantomJS(executable_path = PHANTOMJSDIRPATH)
+        self.start()
 
     def close(self):
         return self.browser.quit()
@@ -65,6 +65,9 @@ class ZheJiang:
             urlcarry[item[1]] = newUrlPaging + item[0] + '&no=7'
         return urlcarry
 
+    def getTableData(self, urlcarry, classname):
+        pass
+
     def start(self):
         self.InputExceptionListPage()
         try:
@@ -84,17 +87,8 @@ class ZheJiang:
                     else:
                         pass
                     self.getPageNum(response)
-                    # area carry thread?
                     tmpUrlData = self.getTableDataUrl(response, self.newurlpaging)
-                    print tmpUrlData
-                    print self.pageNum
-                    print self.pageNumAll
-
-                    # newData = self.checkDataIsNew(tmpUrlData)
-                    # self.urlPagingCarry.update(newData)
-
-                    # start get the lastData
-                    #getLastData(tmpUrlData)
+                    self.getTableData(tmpUrlData, self.classname)
 
                 if self.pageNum == self.pageNumAll:
                     break
@@ -107,4 +101,4 @@ class ZheJiang:
 
 if __name__ == "__main__":
     url  = 'http://gsxt.zjaic.gov.cn/zhejiang.jsp'
-    spider = ZheJiang(url).start()
+    spider = ZheJiang(url)

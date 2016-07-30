@@ -7,12 +7,10 @@ import string
 import traceback
 from selenium import webdriver
 
-reload(sys)
-sys.setdefaultencoding('utf-8')
-
 WORKDIRPATH = 'D:\\work\\GSXT'
 sys.path.append(WORKDIRPATH)
 from lib.config import *
+from lib.Rules.ZongJuRules import ZONGJU
 
 class GuanLiZongJu:
     def __init__(self, url):
@@ -23,8 +21,10 @@ class GuanLiZongJu:
         self.first = 0
         self.end = 0
         self.newurl = ''
+        self.lastdata = ZONGJU()
         self.classname = 'ZONGJU'
         self.browser = webdriver.PhantomJS(executable_path = PHANTOMJSDIRPATH)
+        self.start()
 
     def InputExceptionListPage(self):
         rule = 'window\.open\(\'(.*?)\'\).*?>经营异常名录'
@@ -60,6 +60,9 @@ class GuanLiZongJu:
            urlcarry[item[1]] = item[0]
         return urlcarry
 
+    def getTableData(self, urlcarry, classname):
+        pass
+
     def start(self):
         self.InputExceptionListPage()
         try:
@@ -73,8 +76,8 @@ class GuanLiZongJu:
                 self.getPageNum(response)
                 rule= 'ellipsis\">\s*<.*?href=\"(.*?)\".*?>(.*?)<'
                 tmpUrlData = self.getTableDataUrl(response, rule)
-                #getLastData(tmpUrlData, self.classname)
-                print self.pageNum
+                self.getTableData(tmpUrlData, self.classname)
+                
 
                 if self.pageNum == self.pageNum:
                     break
@@ -86,5 +89,5 @@ class GuanLiZongJu:
 
 if __name__ == "__main__":
     url = 'http://gsxt.saic.gov.cn/zjgs/'
-    spider = GuanLiZongJu(url).start()
+    spider = GuanLiZongJu(url)
 
